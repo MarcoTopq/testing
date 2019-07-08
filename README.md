@@ -3,7 +3,7 @@ this project was made as a test at wallex
 
 
 # how to create table in db
-You need to craete 'test' database into mysql and import customer.sql table into your mysql database.
+You need to craete 'testing' database into mysql.
 
 # How to run nodejs application
 copy index.js and package.json file into your nodejs project folder,
