@@ -1,5 +1,7 @@
+'use strict'
 const Sequelize = require('sequelize');
-const db = require('../bin/index')
+const db = require('../bin/index');
+var bcrypt = require('bcrypt');
 const User = db.define('m_user', {
   id: {
     type: Sequelize.INTEGER,
@@ -20,11 +22,15 @@ const User = db.define('m_user', {
   password: {
     type: Sequelize.STRING,
   },
+  role: {
+    type: Sequelize.STRING,
+  },
   createdAt: Sequelize.DATE,
   updatedAt: Sequelize.DATE,
   isDeleted: Sequelize.TINYINT,
 });
 
 User.sync();
+
 
 module.exports = User;

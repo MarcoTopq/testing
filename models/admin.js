@@ -1,5 +1,7 @@
+'use strict'
 const Sequelize = require('sequelize');
 const db = require('../bin/index')
+var bcrypt = require('bcrypt');
 const Admin = db.define('m_admin', {
   id: {
     type: Sequelize.INTEGER,
@@ -18,6 +20,9 @@ const Admin = db.define('m_admin', {
     unique: true,
   },
   password: {
+    type: Sequelize.STRING,
+  },
+  role: {
     type: Sequelize.STRING,
   },
   createdAt: Sequelize.DATE,

@@ -9,6 +9,8 @@ var usersRouter = require('./routes/users');
 var adminRouter = require('./routes/admin');
 var accountRouter = require('./routes/account');
 var documentRouter = require('./routes/document');
+var creditRouter = require('./routes/credit');
+var cors = require('cors');
 var app = express();
 
 // view engine setup
@@ -21,12 +23,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
+app.use(cors());
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/admin', adminRouter);
 app.use('/account', accountRouter);
 app.use('/document', documentRouter);
+app.use('/credit', creditRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

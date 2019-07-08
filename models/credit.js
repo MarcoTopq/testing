@@ -1,3 +1,4 @@
+'use strict'
 const Sequelize = require('sequelize');
 const db = require('../bin/index')
 const User = require('../models/users');
@@ -7,10 +8,13 @@ const Credit = db.define('m_credit', {
     primaryKey: true,
     autoIncrement: true,
   },
-  total: {
+  total_credit: {
     type: Sequelize.INTEGER,
   },
   payment: {
+    type: Sequelize.INTEGER,
+  },
+  total_month: {
     type: Sequelize.INTEGER,
   },
   month: {

@@ -1,25 +1,43 @@
+'use strict'
 var express = require('express');
 var router = express.Router();
 var Document = require('../models/document');
+var auth = require('../middleware/auth');
+var expressJoi = require('express-joi-validator');
+var Joi = require('joi');
 
+var bodySchema = {
+  body: {
+    id_card: Joi.string().required(),
+    doc_file: Joi.string().required()
 
-router.post('/', async (req, res) => {
+  }
+};
+
+var updateSchema = {
+  body: {
+    id_card: Joi.string().allow(""),
+    doc_file: Joi.string().allow(""),
+  }
+};
+
+router.post('/', auth.checkToken, expressJoi(bodySchema), async (req, res) => {
   var body = req.body;
-  const document = await Document.create({
+  await Document.create({
     id_card: body.id_card,
     doc_file: body.doc_file
-  });
-  document.save().then(data => (res.json(data)))
+  })
+    .then(data => (res.json(data)))
     .catch(err => res.status(400).json(err))
 });
 
-router.get('/', async (req, res) => {
+router.get('/', auth.checkToken, auth.isAuthorized, async (req, res) => {
   await Document.findAll()
     .then(data => (res.json(data)))
     .catch(err => res.status(400).json(err))
 })
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth.checkToken, async (req, res) => {
   var Id = req.params.id;
   await Document.findOne({
     where: {
@@ -37,7 +55,7 @@ router.get('/:id', async (req, res) => {
     .catch(err => res.status(400).json(err))
 });
 
-router.put('/edit/:id', async (req, res) => {
+router.put('/edit/:id', auth.checkToken, expressJoi(updateSchema), async (req, res) => {
   var Id = req.params.id;
   var body = req.body;
   await Document.findOne({
@@ -60,11 +78,18 @@ router.put('/edit/:id', async (req, res) => {
           })
       }
     })
+    .then(data => {
+      Document.findOne({
+        where: {
+          id: Id
+        }
+      })
+    })
     .then(data => (res.json(data)))
     .catch(err => res.status(400).json(err))
 })
 
-router.delete('/delete/:id', async (req, res) => {
+router.delete('/delete/:id', auth.checkToken, auth.isAuthorized, async (req, res) => {
   var Id = req.params.id;
   await Document.update({
     isDelete: true

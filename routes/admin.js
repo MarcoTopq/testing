@@ -1,107 +1,89 @@
+'use strict'
 var express = require('express');
 var router = express.Router();
 var Admin = require('../models/admin');
-var passport = require('passport');
 var config = require('../config/index');
-require('../config/passport')(passport);
 var bcrypt = require('bcrypt');
 var jwt = require('jsonwebtoken');
+var auth = require('../middleware/auth');
+var expressJoi = require('express-joi-validator');
+var Joi = require('joi');
 
-router.post('/signup', async function (req, res, next) {
-  var body = req.body;
-  const admin = await Admin.create({
-    userrname: body.username,
-    email: body.email,
-    phone: body.phone,
-    password: body.password
-  });
-  admin.save().then(data => (res.json(data)))
-    .catch(err => res.status(400).json(err))
-});
-
-router.post('/login', (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-  Admin.findOne({ where: { email: email } })
-    .then(admin => {
-      if (!admin) {
-        errors.email = "No Account Found";
-        return res.status(404).json(errors);
-      }
-      bcrypt.compare(password, admin.password)
-        .then(isMatch => {
-          if (isMatch) {
-            const payload = {
-              id: admin._id,
-              name: admin.Adminname
-            };
-            jwt.sign(payload, config.secret, { expiresIn: 36000 },
-              (err, token) => {
-                if (err) res.status(500)
-                  .json({
-                    error: "Error signing token",
-                    raw: err
-                  });
-                res.json({
-                  success: true,
-                  token: 'JWT ' + token
-                });
-              });
-          } else {
-            errors.password = "Password is incorrect";
-            res.status(400).json(errors);
-          }
-        });
-    });
-});
-
-router.post('/register', async (req, res) => {
-  await Admin.findOne({ where: { email: req.body.email } })
-    .then(admin => {
-      if (admin) {
-        let error = 'Email Address Exists in Database.';
-        return res.status(400).json(error);
-      } else {
-        const newAdmin = new Admin({
-          name: req.body.name,
-          email: req.body.email,
-          phone: req.body.phone,
-          password: req.body.password
-        });
-        bcrypt.genSalt(10, (err, salt) => {
-          if (err) throw err;
-          bcrypt.hash(newAdmin.password, salt,
-            (err, hash) => {
-              if (err) throw err;
-              newAdmin.password = hash;
-              newAdmin.save().then(admin => res.json(admin))
-                .catch(err => res.status(400).json(err));
-            });
-        });
-      }
-    });
-});
-
-getToken = function (headers) {
-  if (headers && headers.authorization) {
-    var parted = headers.authorization.split(' ');
-    if (parted.length === 2) {
-      return parted[1];
-    } else {
-      return null;
-    }
-  } else {
-    return null;
+var bodySchema = {
+  body: {
+    username: Joi.string().required(),
+    email: Joi.string().required(),
+    phone: Joi.string().required(),
+    password: Joi.string().required(),
   }
 };
 
-router.get('/', async (req, res) => {
+var updateSchema = {
+  body: {
+    username: Joi.string().allow(""),
+    email: Joi.string().allow(""),
+    phone: Joi.string().allow(""),
+    password: Joi.string().allow(""),
+  }
+};
+router.post('/signup', expressJoi(bodySchema), async (req, res) => {
+  var body = req.body;
+  await Admin.findOne({
+    where: {
+      email: body.email
+    }
+  }).then(current_user => {
+    if (current_user) {
+      return res.json("email has been used");
+    } else {
+      const admin = Admin.create({
+        username: body.username,
+        email: body.email,
+        phone: body.phone,
+        password: bcrypt.hashSync(body.password, 10),
+        role: 'admin'
+      })
+        .then(data => (res.json(data)))
+    }
+  })
+    .catch(err => res.status(400).json(err));
+});
+
+router.post('/signin', async (req, res) => {
+  await Admin.findOne({
+    where: {
+      email: req.body.email
+    }
+  }).then((user) => {
+    const checkLogin = bcrypt.compareSync(req.body.password, user.password);
+    if (checkLogin) {
+      console.log("wowwwwwwwwwwwwwwwwwwwww" + user.role)
+      var token = jwt.sign({ id: user.id, role: user.role }, config.secret, { expiresIn: 36000 });
+      if (token) {
+        res.status(200).json({
+          message: "Success Sign In",
+          token: token
+        });
+      }
+    } else {
+      res.status(200).json({
+        message: "Failed Sign In",
+      });
+    }
+  }).catch((err) => {
+    res.status(200).json({
+      message: err.message,
+    });
+  });
+});
+
+router.get('/', auth.checkToken, auth.isAuthorized, async (req, res) => {
   await Admin.findAll()
     .then(data => (res.json(data)))
     .catch(err => res.status(400).json(err))
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth.checkToken, auth.isAuthorized, async (req, res) => {
   var Id = req.params.id;
   await Admin.findOne({
     where: {
@@ -119,7 +101,7 @@ router.get('/:id', async (req, res) => {
     .catch(err => res.status(400).json(err))
 });
 
-router.put('/edit/:id', async (req, res) => {
+router.put('/:id', auth.checkToken, auth.isAuthorized, expressJoi(updateSchema), async (req, res) => {
   var Id = req.params.id;
   var body = req.body;
   await Admin.findOne({
@@ -148,7 +130,7 @@ router.put('/edit/:id', async (req, res) => {
     .catch(err => res.status(400).json(err))
 })
 
-router.delete('/delete/:id', async (req, res) => {
+router.delete('/:id', auth.checkToken, auth.isAuthorized, async (req, res) => {
   var Id = req.params.id;
   await Admin.update({
     isDelete: true
@@ -165,11 +147,6 @@ router.delete('/delete/:id', async (req, res) => {
     .then(res.json("Admin was remove"))
     .catch(err => res.status(400).json(err))
 });
-
-
-
-
-
 
 module.exports = router;
 

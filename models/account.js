@@ -1,3 +1,4 @@
+'use strict'
 const Sequelize = require('sequelize');
 const db = require('../bin/index')
 const User = require('../models/users');
