@@ -23,6 +23,11 @@ const Building = db.define('m_building', {
   isDeleted: Sequelize.TINYINT,
 });
 
+Document.belongsTo(User, {
+  foreignKey: 'user_id',
+  require: true
+});
+
 Building.sync();
 
 module.exports = Building;

@@ -19,14 +19,14 @@ var storage = multer.diskStorage({
 var bodySchema = {
   body: {
     name: Joi.string().required(),
-    address: Joi.string().required(),
+    mac_ble: Joi.string().required(),
   }
 };
 
 var updateSchema = {
   body: {
     name: Joi.string().allow(""),
-    address: Joi.string().allow(""),
+    mac_ble: Joi.string().allow(""),
     obj: Joi.string().allow("")
   }
 };
@@ -35,8 +35,9 @@ router.post('/', auth.checkToken, expressJoi(bodySchema), upload.single('profile
   var body = req.body;
   await Room.create({
     name: body.name,
-    address: body.address,
-    obj: req.files
+    mac_ble: body.mac_ble,
+    obj: req.files,
+    building_id: body.building_id
   })
     .then(data => (res.json(data)))
     .catch(err => res.status(400).json(err))
@@ -81,8 +82,9 @@ router.put('/edit/:id', auth.checkToken, expressJoi(updateSchema), async (req, r
       else {
         Room.update({
           name: body.name,
-          address: body.address,
-          obj: req.files
+          mac_ble: body.mac_ble,
+          obj: req.files,
+          building_id: body.building_id
         }, {
             where: {
               id: Id

@@ -76,6 +76,33 @@ router.post('/signin', async (req, res) => {
   });
 })
 
+router.post('/login', async (req, res) => {
+  await User.findOne({
+    where: {
+      phone: req.body.phone
+    }
+  }).then((user) => {
+    // const checkLogin = bcrypt.compareSync(req.body.password, user.password);
+    // if (checkLogin) {
+      var token = jwt.sign({ id: user.id, role: user.role }, config.secret ,{expiresIn: '1h'});
+      if (token) {
+        res.status(200).json({
+          message: "Success Sign In",
+          token: token
+        });
+      // }
+    } else {
+      res.status(200).json({
+        message: "Failed Sign In",
+      });
+    }
+  }).catch((err) => {
+    res.status(200).json({
+      message: err.message,
+    });
+  });
+})
+
 router.get('/', auth.checkToken, auth.isAuthorized, async (req, res) => {
   await User.findAll()
     .then(data => (res.json(data)))
