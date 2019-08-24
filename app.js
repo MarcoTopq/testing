@@ -10,6 +10,9 @@ var adminRouter = require('./routes/admin');
 var accountRouter = require('./routes/account');
 var documentRouter = require('./routes/document');
 var creditRouter = require('./routes/credit');
+var buildingRouter = require('./routes/building');
+var roomRouter = require('./routes/room');
+
 var cors = require('cors');
 var app = express();
 
@@ -31,6 +34,8 @@ app.use('/admin', adminRouter);
 app.use('/account', accountRouter);
 app.use('/document', documentRouter);
 app.use('/credit', creditRouter);
+app.use('/building', buildingRouter);
+app.use('/room', roomRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
